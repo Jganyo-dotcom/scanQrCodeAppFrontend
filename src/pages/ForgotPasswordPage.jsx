@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { QrCode, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import "../css/AuthPages.css";
+import { baseUrl } from "../components/api";
+
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

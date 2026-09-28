@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   QrCode,
   BarChart3,
   Globe,
   Smartphone,
   Clock,
-  ArrowUpRight,
   Download,
   Calendar,
   Filter,
@@ -18,58 +18,103 @@ import {
   Tablet,
 } from "lucide-react";
 import Sidebar from "../components/layout/Sidebar";
+import { baseUrl } from "../components/api";
 import "../css/Analytics.css";
 
-// Mock Analytics Dataset
-const CAMPAIGN_OPTIONS = [
-  { id: "all", name: "All Campaigns (Aggregated)" },
-  { id: "qr-101", name: "Summer Promo Campaign" },
-  { id: "qr-102", name: "Guest Office Wi-Fi" },
-  { id: "qr-103", name: "CEO Digital vCard" },
-];
-
-const METRICS_DATA = {
-  totalScans: 1896,
-  scansChange: "+18.4%",
-  uniqueScanners: 1412,
-  uniqueChange: "+12.1%",
-  topCountry: "United States",
-  topCountryPercent: "42%",
-  peakTime: "2:00 PM - 4:00 PM",
-};
-
-const LOCATION_BREAKDOWN = [
-  { country: "United States", code: "US", scans: 796, percentage: 42 },
-  { country: "United Kingdom", code: "UK", scans: 341, percentage: 18 },
-  { country: "Germany", code: "DE", scans: 246, percentage: 13 },
-  { country: "Canada", code: "CA", scans: 189, percentage: 10 },
-  { country: "Other Regions", code: "INT", scans: 324, percentage: 17 },
-];
-
-const DEVICE_BREAKDOWN = [
-  { device: "iOS (iPhone/iPad)", percentage: 58, count: 1100, icon: Smartphone },
-  { device: "Android Mobile", percentage: 34, count: 644, icon: Smartphone },
-  { device: "Desktop Web", percentage: 6, count: 114, icon: Monitor },
-  { device: "Tablet Devices", percentage: 2, count: 38, icon: Tablet },
-];
-
-const RECENT_SCAN_LOGS = [
-  { id: "log-1", campaign: "Summer Promo Campaign", device: "iPhone 15 Pro (iOS 17.4)", location: "New York, US", time: "2 mins ago", ip: "192.168.1.xxx" },
-  { id: "log-2", campaign: "Summer Promo Campaign", device: "Samsung Galaxy S24 (Android 14)", location: "London, UK", time: "14 mins ago", ip: "86.154.20.xxx" },
-  { id: "log-3", campaign: "Guest Office Wi-Fi", device: "Google Pixel 8 (Android 14)", location: "San Francisco, US", time: "42 mins ago", ip: "172.56.42.xxx" },
-  { id: "log-4", campaign: "CEO Digital vCard", device: "MacBook Pro (Chrome 122)", location: "Berlin, DE", time: "1 hour ago", ip: "91.198.174.xxx" },
-  { id: "log-5", campaign: "Summer Promo Campaign", device: "iPhone 14 (iOS 17.2)", location: "Toronto, CA", time: "2 hours ago", ip: "142.250.190.xxx" },
-];
-
 export default function Analytics() {
+  const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState("all");
   const [dateRange, setDateRange] = useState("30d");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Live state pipelines mapping real server database payloads
+  const [campaignOptions, setCampaignOptions] = useState([
+    { id: "all", name: "All Campaigns (Aggregated)" },
+  ]);
+  const [metrics, setMetrics] = useState({
+    totalScans: 0,
+    scansChange: "0%",
+    uniqueScanners: 0,
+    uniqueChange: "0%",
+    topCountry: "N/A",
+    topCountryPercent: "0%",
+    peakTime: "N/A",
+  });
+  const [locations, setLocations] = useState([]);
+  const [devices, setDevices] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Async query processor hitting the Express framework
+  const fetchAnalytics = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const token = localStorage.getItem("token");
+
+      // Hits dynamic backend filters strategy pathway
+      const response = await fetch(
+        `${baseUrl}/v1/qrs/analytics?campaign=${selectedCampaign}&range=${dateRange}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const resData = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+        throw new Error(
+          resData.message || "Failed to retrieve analytics collection.",
+        );
+      }
+
+      // Sync backend telemetry values inside hooks array
+      if (resData.campaigns) setCampaignOptions(resData.campaigns);
+      setMetrics(resData.metrics || metrics);
+      setLocations(resData.locations || []);
+      setDevices(resData.devices || []);
+      setLogs(resData.logs || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Re-fetch automatically whenever dropdown toggles occur
+  useEffect(() => {
+    fetchAnalytics();
+  }, [selectedCampaign, dateRange]);
+
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 800);
+    fetchAnalytics();
+  };
+
+  // Maps device text configurations back down to visual icons smoothly
+  const getDeviceIcon = (deviceName = "") => {
+    const lowName = deviceName.toLowerCase();
+    if (
+      lowName.includes("desktop") ||
+      lowName.includes("chrome") ||
+      lowName.includes("macbook") ||
+      lowName.includes("windows")
+    )
+      return Monitor;
+    if (lowName.includes("tablet") || lowName.includes("ipad")) return Tablet;
+    return Smartphone;
   };
 
   return (
@@ -80,7 +125,6 @@ export default function Analytics() {
       />
 
       <div className="main-wrapper">
-        {/* Mobile Header */}
         <header className="mobile-header-bar">
           <div className="mobile-brand">
             <QrCode size={24} color="#2563eb" />
@@ -96,11 +140,12 @@ export default function Analytics() {
         </header>
 
         <main className="analytics-container">
-          {/* Header & Controls */}
           <section className="analytics-header">
             <div className="dashboard-title-group">
               <h1>Scan Analytics</h1>
-              <p>Performance metrics, device diagnostics, and geographic traffic</p>
+              <p>
+                Performance metrics, device diagnostics, and geographic traffic
+              </p>
             </div>
 
             <div className="analytics-controls">
@@ -111,7 +156,7 @@ export default function Analytics() {
                   value={selectedCampaign}
                   onChange={(e) => setSelectedCampaign(e.target.value)}
                 >
-                  {CAMPAIGN_OPTIONS.map((c) => (
+                  {campaignOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -140,12 +185,29 @@ export default function Analytics() {
                 <RefreshCw size={18} />
               </button>
 
-              <button className="btn-export-secondary">
-                <Download size={16} />
-                Export CSV
+              <button
+                className="btn-export-secondary"
+                onClick={() => alert("CSV Export Triggered.")}
+              >
+                <Download size={16} /> Export CSV
               </button>
             </div>
           </section>
+
+          {error && (
+            <div
+              style={{
+                padding: "1rem",
+                backgroundColor: "#fee2e2",
+                color: "#991b1b",
+                borderRadius: "6px",
+                marginBottom: "1.5rem",
+                fontSize: "0.85rem",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
           {/* Core Metric Cards */}
           <section className="analytics-metrics-grid">
@@ -158,11 +220,10 @@ export default function Analytics() {
               </div>
               <div className="metric-body">
                 <span className="metric-number">
-                  {METRICS_DATA.totalScans.toLocaleString()}
+                  {isLoading ? "..." : metrics.totalScans.toLocaleString()}
                 </span>
                 <span className="metric-badge positive">
-                  <TrendingUp size={12} />
-                  {METRICS_DATA.scansChange}
+                  <TrendingUp size={12} /> {metrics.scansChange}
                 </span>
               </div>
             </div>
@@ -176,11 +237,10 @@ export default function Analytics() {
               </div>
               <div className="metric-body">
                 <span className="metric-number">
-                  {METRICS_DATA.uniqueScanners.toLocaleString()}
+                  {isLoading ? "..." : metrics.uniqueScanners.toLocaleString()}
                 </span>
                 <span className="metric-badge positive">
-                  <TrendingUp size={12} />
-                  {METRICS_DATA.uniqueChange}
+                  <TrendingUp size={12} /> {metrics.uniqueChange}
                 </span>
               </div>
             </div>
@@ -193,9 +253,11 @@ export default function Analytics() {
                 </div>
               </div>
               <div className="metric-body">
-                <span className="metric-number">{METRICS_DATA.topCountry}</span>
+                <span className="metric-number">
+                  {isLoading ? "..." : metrics.topCountry}
+                </span>
                 <span className="metric-subtext">
-                  {METRICS_DATA.topCountryPercent} of total scans
+                  {metrics.topCountryPercent} of total scans
                 </span>
               </div>
             </div>
@@ -209,7 +271,7 @@ export default function Analytics() {
               </div>
               <div className="metric-body">
                 <span className="metric-number text-medium">
-                  {METRICS_DATA.peakTime}
+                  {isLoading ? "..." : metrics.peakTime}
                 </span>
                 <span className="metric-subtext">Based on local timezones</span>
               </div>
@@ -222,31 +284,43 @@ export default function Analytics() {
             <div className="analytics-card">
               <div className="card-header">
                 <h3>
-                  <MapPin size={18} color="#2563eb" />
-                  Geographic Traffic
+                  <MapPin size={18} color="#2563eb" /> Geographic Traffic
                 </h3>
                 <span className="card-subtitle">By country of origin</span>
               </div>
               <div className="card-body">
                 <div className="progress-list">
-                  {LOCATION_BREAKDOWN.map((loc) => (
-                    <div key={loc.code} className="progress-item">
-                      <div className="progress-label-row">
-                        <span className="progress-title">
-                          <strong>{loc.code}</strong> — {loc.country}
-                        </span>
-                        <span className="progress-value">
-                          {loc.scans} ({loc.percentage}%)
-                        </span>
+                  {isLoading ? (
+                    <p style={{ color: "#64748b", fontSize: "0.85rem" }}>
+                      Loading geography...
+                    </p>
+                  ) : locations.length > 0 ? (
+                    locations.map((loc) => (
+                      <div
+                        key={loc.code || loc.country}
+                        className="progress-item"
+                      >
+                        <div className="progress-label-row">
+                          <span className="progress-title">
+                            <strong>{loc.code || "—"}</strong> — {loc.country}
+                          </span>
+                          <span className="progress-value">
+                            {loc.scans} ({loc.percentage}%)
+                          </span>
+                        </div>
+                        <div className="progress-bar-track">
+                          <div
+                            className="progress-bar-fill blue"
+                            style={{ width: `${loc.percentage}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="progress-bar-track">
-                        <div
-                          className="progress-bar-fill blue"
-                          style={{ width: `${loc.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      No country metrics logged yet.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -255,79 +329,207 @@ export default function Analytics() {
             <div className="analytics-card">
               <div className="card-header">
                 <h3>
-                  <Smartphone size={18} color="#2563eb" />
-                  Devices & Operating Systems
+                  <Smartphone size={18} color="#2563eb" /> Devices & Operating
+                  Systems
                 </h3>
                 <span className="card-subtitle">Scanner User Agents</span>
               </div>
               <div className="card-body">
                 <div className="progress-list">
-                  {DEVICE_BREAKDOWN.map((dev, i) => {
-                    const IconComponent = dev.icon;
-                    return (
-                      <div key={i} className="progress-item">
-                        <div className="progress-label-row">
-                          <span className="progress-title flex-align">
-                            <IconComponent size={14} color="#64748b" />
-                            {dev.device}
-                          </span>
-                          <span className="progress-value">
-                            {dev.count} ({dev.percentage}%)
-                          </span>
+                  {isLoading ? (
+                    <p style={{ color: "#64748b", fontSize: "0.85rem" }}>
+                      Loading diagnostics...
+                    </p>
+                  ) : devices.length > 0 ? (
+                    devices.map((dev, i) => {
+                      const IconComponent = getDeviceIcon(dev.device);
+                      return (
+                        <div key={i} className="progress-item">
+                          <div className="progress-label-row">
+                            <span
+                              className="progress-title flex-align"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.35rem",
+                              }}
+                            >
+                              <IconComponent size={14} color="#64748b" />
+                              {dev.device}
+                            </span>
+                            <span className="progress-value">
+                              {dev.count} ({dev.percentage}%)
+                            </span>
+                          </div>
+                          <div className="progress-bar-track">
+                            <div
+                              className="progress-bar-fill green"
+                              style={{ width: `${dev.percentage}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="progress-bar-track">
-                          <div
-                            className="progress-bar-fill green"
-                            style={{ width: `${dev.percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      No user agent telemetry caught yet.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           </section>
 
           {/* Live Scan Audit Table */}
-          <section className="analytics-card full-width">
-            <div className="card-header border-bottom">
+          <section
+            className="analytics-card full-width"
+            style={{ marginTop: "1.5rem" }}
+          >
+            <div
+              className="card-header border-bottom"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <div>
-                <h3>Recent Scan Events</h3>
+                <h3
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <Clock size={18} color="#2563eb" /> Recent Scan Events
+                </h3>
                 <span className="card-subtitle">
                   Real-time telemetry log feed
                 </span>
               </div>
-              <span className="live-indicator">
-                <span className="pulse-dot" /> Live Logging
+              <span
+                className="live-indicator"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontSize: "0.75rem",
+                  color: "#16a34a",
+                  fontWeight: 600,
+                }}
+              >
+                <span
+                  className="pulse-dot"
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    backgroundColor: "#16a34a",
+                    borderRadius: "50%",
+                  }}
+                />{" "}
+                Live Logging
               </span>
             </div>
 
-            <div className="table-responsive">
-              <table className="analytics-table">
-                <thead>
-                  <tr>
-                    <th>Campaign</th>
-                    <th>Device & Browser</th>
-                    <th>Location</th>
-                    <th>IP Hash</th>
-                    <th>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {RECENT_SCAN_LOGS.map((log) => (
-                    <tr key={log.id}>
-                      <td className="font-semibold">{log.campaign}</td>
-                      <td>{log.device}</td>
-                      <td>
-                        <span className="location-pill">{log.location}</span>
-                      </td>
-                      <td className="font-mono">{log.ip}</td>
-                      <td className="text-muted">{log.time}</td>
+            <div className="card-body">
+              <div className="table-responsive" style={{ overflowX: "auto" }}>
+                <table
+                  className="analytics-table"
+                  style={{ width: "100%", borderCollapse: "collapse" }}
+                >
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", padding: "0.75rem" }}>
+                        Timestamp
+                      </th>
+                      <th style={{ textAlign: "left", padding: "0.75rem" }}>
+                        Campaign / QR
+                      </th>
+                      <th style={{ textAlign: "left", padding: "0.75rem" }}>
+                        Location
+                      </th>
+                      <th style={{ textAlign: "left", padding: "0.75rem" }}>
+                        Device / OS
+                      </th>
+                      <th style={{ textAlign: "left", padding: "0.75rem" }}>
+                        IP Address
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          style={{
+                            textAlign: "center",
+                            padding: "1.5rem",
+                            color: "#64748b",
+                          }}
+                        >
+                          Loading event logs...
+                        </td>
+                      </tr>
+                    ) : logs.length > 0 ? (
+                      logs.map((log, index) => (
+                        <tr
+                          key={log.id || index}
+                          style={{ borderBottom: "1px solid #f1f5f9" }}
+                        >
+                          <td
+                            style={{ padding: "0.75rem", fontSize: "0.85rem" }}
+                          >
+                            {new Date(log.timestamp).toLocaleString()}
+                          </td>
+                          <td
+                            style={{
+                              padding: "0.75rem",
+                              fontSize: "0.85rem",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {log.qrName || log.campaign || "N/A"}
+                          </td>
+                          <td
+                            style={{ padding: "0.75rem", fontSize: "0.85rem" }}
+                          >
+                            {log.city
+                              ? `${log.city}, ${log.country}`
+                              : log.country || "Unknown"}
+                          </td>
+                          <td
+                            style={{ padding: "0.75rem", fontSize: "0.85rem" }}
+                          >
+                            {log.device || "Unknown"}
+                          </td>
+                          <td
+                            style={{
+                              padding: "0.75rem",
+                              fontSize: "0.85rem",
+                              color: "#64748b",
+                            }}
+                          >
+                            {log.ipAddress || "—"}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          style={{
+                            textAlign: "center",
+                            padding: "1.5rem",
+                            color: "#94a3b8",
+                          }}
+                        >
+                          No recent scan logs recorded.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
         </main>
