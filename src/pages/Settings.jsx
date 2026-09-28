@@ -21,7 +21,6 @@ import Sidebar from "../components/layout/Sidebar";
 import "../css/Settings.css";
 import { baseUrl } from "../components/api";
 
-
 export default function Settings() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("domains");
