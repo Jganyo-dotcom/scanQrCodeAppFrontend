@@ -1,0 +1,287 @@
+/* ==========================================================================
+   DevJay QR - Authentication Pages Stylesheet (White Theme)
+   ========================================================================== */
+
+:root {
+  --auth-bg-page: #f8fafc;
+  --auth-bg-card: #ffffff;
+  --auth-bg-input: #ffffff;
+  --auth-bg-input-hover: #f1f5f9;
+
+  --auth-border: #e2e8f0;
+  --auth-border-focus: #2563eb;
+  --auth-border-subtle: #cbd5e1;
+
+  --auth-text-dark: #0f172a;
+  --auth-text-muted: #64748b;
+  --auth-text-light: #94a3b8;
+
+  --auth-primary: #2563eb;
+  --auth-primary-hover: #1d4ed8;
+  --auth-primary-light: #eff6ff;
+
+  --auth-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 15px rgba(0, 0, 0, 0.02);
+  --auth-radius-card: 20px;
+  --auth-radius-input: 10px;
+
+  --auth-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Page Layout */
+.auth-page-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--auth-bg-page);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+.auth-card-container {
+  width: 100%;
+  max-width: 440px;
+  background: var(--auth-bg-card);
+  border: 1px solid var(--auth-border);
+  border-radius: var(--auth-radius-card);
+  box-shadow: var(--auth-shadow);
+  padding: 2.5rem 2.25rem;
+  box-sizing: border-box;
+}
+
+/* Header & Branding */
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--auth-text-dark);
+  text-decoration: none;
+  margin-bottom: 1.75rem;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--auth-text-dark);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+  font-size: 0.925rem;
+  color: var(--auth-text-muted);
+  line-height: 1.5;
+}
+
+/* Form Controls */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.form-field label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--auth-text-dark);
+}
+
+.input-icon-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon-group .input-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--auth-text-light);
+  pointer-events: none;
+  transition: var(--auth-transition);
+}
+
+.auth-input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  background-color: var(--auth-bg-input);
+  border: 1px solid var(--auth-border);
+  border-radius: var(--auth-radius-input);
+  font-size: 0.95rem;
+  color: var(--auth-text-dark);
+  outline: none;
+  transition: var(--auth-transition);
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  border-color: var(--auth-border-focus);
+  box-shadow: 0 0 0 4px var(--auth-primary-light);
+}
+
+.auth-input:focus + .input-icon,
+.auth-input:focus ~ .input-icon {
+  color: var(--auth-primary);
+}
+
+/* Meta Controls (Remember me & Forgot Password) */
+.auth-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.remember-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--auth-text-muted);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+.remember-checkbox input[type="checkbox"] {
+  accent-color: var(--auth-primary);
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.forgot-link {
+  color: var(--auth-primary);
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--auth-transition);
+}
+
+.forgot-link:hover {
+  color: var(--auth-primary-hover);
+  text-decoration: underline;
+}
+
+/* Submit Button */
+.btn-auth-submit {
+  width: 100%;
+  padding: 0.9rem;
+  background-color: var(--auth-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--auth-radius-input);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: var(--auth-transition);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-auth-submit:hover {
+  background-color: var(--auth-primary-hover);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Divider & Socials */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.75rem 0;
+  color: var(--auth-text-light);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--auth-border);
+}
+
+.auth-divider span {
+  padding: 0 0.85rem;
+}
+
+/* Footer Switcher ("Do you have an account?") */
+.auth-footer {
+  text-align: center;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--auth-border);
+  font-size: 0.9rem;
+  color: var(--auth-text-muted);
+}
+
+.auth-switch-link {
+  color: var(--auth-primary);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 0.35rem;
+  transition: var(--auth-transition);
+}
+
+.auth-switch-link:hover {
+  color: var(--auth-primary-hover);
+  text-decoration: underline;
+}
+
+/* Success Confirmation Card (For Forgot Password) */
+.success-banner {
+  background-color: var(--auth-primary-light);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--auth-radius-input);
+  padding: 1.25rem;
+  text-align: center;
+  color: #1e40af;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Mobile Responsiveness
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .auth-page-wrapper {
+    padding: 1rem;
+  }
+
+  .auth-card-container {
+    padding: 1.75rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .auth-title {
+    font-size: 1.4rem;
+  }
+
+  .auth-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}

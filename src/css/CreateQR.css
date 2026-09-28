@@ -1,0 +1,294 @@
+/* ==========================================================================
+   DevJay QR - Create QR Page Stylesheet (Plain CSS)
+   ========================================================================== */
+
+:root {
+  --create-bg: #f8fafc;
+  --create-card-bg: #ffffff;
+  --create-border: #e2e8f0;
+
+  --create-text-main: #0f172a;
+  --create-text-muted: #64748b;
+  --create-text-light: #94a3b8;
+
+  --create-primary: #2563eb;
+  --create-primary-hover: #1d4ed8;
+  --create-primary-light: #eff6ff;
+
+  --create-radius: 12px;
+  --create-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --create-shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Page Layout Grid */
+.create-qr-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.create-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+/* Form Container Card */
+.form-card {
+  background: var(--create-card-bg);
+  border: 1px solid var(--create-border);
+  border-radius: var(--create-radius);
+  box-shadow: var(--create-shadow);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--create-text-main);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* QR Type Selector Buttons */
+.type-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.type-btn {
+  background: #f8fafc;
+  border: 1px solid var(--create-border);
+  border-radius: var(--create-radius);
+  padding: 0.85rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--create-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.type-btn:hover {
+  border-color: var(--create-primary);
+  color: var(--create-primary);
+  background-color: var(--create-primary-light);
+}
+
+.type-btn.active {
+  background-color: var(--create-primary-light);
+  border-color: var(--create-primary);
+  color: var(--create-primary);
+}
+
+/* Form Fields */
+.input-group-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.field-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--create-text-main);
+}
+
+.field-input,
+.field-select {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--create-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  background-color: #ffffff;
+  color: var(--create-text-main);
+  box-sizing: border-box;
+}
+
+.field-input:focus,
+.field-select:focus {
+  border-color: var(--create-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Design & Customization Pickers */
+.color-picker-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--create-border);
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background-color: #f8fafc;
+}
+
+.color-swatch-picker {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+}
+
+.color-value-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--create-text-main);
+  text-transform: uppercase;
+}
+
+/* Live Preview Card (Sticky Side Column) */
+.preview-card {
+  background: var(--create-card-bg);
+  border: 1px solid var(--create-border);
+  border-radius: var(--create-radius);
+  box-shadow: var(--create-shadow-md);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  position: sticky;
+  top: 2rem;
+}
+
+.preview-title-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preview-badge {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+}
+
+.qr-display-box {
+  width: 220px;
+  height: 220px;
+  border-radius: 16px;
+  border: 1px solid var(--create-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
+}
+
+.qr-canvas-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Action Buttons */
+.download-actions-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.btn-download-primary {
+  width: 100%;
+  background-color: var(--create-primary);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-download-primary:hover {
+  background-color: var(--create-primary-hover);
+}
+
+.btn-download-secondary {
+  width: 100%;
+  background-color: #f8fafc;
+  color: var(--create-text-main);
+  border: 1px solid var(--create-border);
+  padding: 0.65rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-download-secondary:hover {
+  background-color: #f1f5f9;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+  .create-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-card {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .create-qr-container {
+    padding: 1.25rem 1rem;
+  }
+
+  .type-selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .input-group-row,
+  .color-picker-group {
+    grid-template-columns: 1fr;
+  }
+}
