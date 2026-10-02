@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   QrCode,
@@ -28,7 +28,6 @@ export default function Analytics() {
   const [dateRange, setDateRange] = useState("30d");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Live state pipelines mapping real server database payloads
   const [campaignOptions, setCampaignOptions] = useState([
     { id: "all", name: "All Campaigns (Aggregated)" },
   ]);
@@ -47,14 +46,12 @@ export default function Analytics() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Async query processor hitting the Express framework
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setIsLoading(true);
       setError("");
       const token = localStorage.getItem("token");
 
-      // Hits dynamic backend filters strategy pathway
       const response = await fetch(
         `${baseUrl}/v1/qrs/analytics?campaign=${selectedCampaign}&range=${dateRange}`,
         {
@@ -79,9 +76,8 @@ export default function Analytics() {
         );
       }
 
-      // Sync backend telemetry values inside hooks array
       if (resData.campaigns) setCampaignOptions(resData.campaigns);
-      setMetrics(resData.metrics || metrics);
+      if (resData.metrics) setMetrics(resData.metrics);
       setLocations(resData.locations || []);
       setDevices(resData.devices || []);
       setLogs(resData.logs || []);
@@ -91,19 +87,17 @@ export default function Analytics() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [selectedCampaign, dateRange, navigate]);
 
-  // Re-fetch automatically whenever dropdown toggles occur
   useEffect(() => {
     fetchAnalytics();
-  }, [selectedCampaign, dateRange]);
+  }, [fetchAnalytics]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchAnalytics();
   };
 
-  // Maps device text configurations back down to visual icons smoothly
   const getDeviceIcon = (deviceName = "") => {
     const lowName = deviceName.toLowerCase();
     if (
@@ -111,8 +105,9 @@ export default function Analytics() {
       lowName.includes("chrome") ||
       lowName.includes("macbook") ||
       lowName.includes("windows")
-    )
+    ) {
       return Monitor;
+    }
     if (lowName.includes("tablet") || lowName.includes("ipad")) return Tablet;
     return Smartphone;
   };
@@ -209,7 +204,7 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* Core Metric Cards */}
+          {/* Metrics Overview */}
           <section className="analytics-metrics-grid">
             <div className="metric-card">
               <div className="metric-header-row">
@@ -278,9 +273,8 @@ export default function Analytics() {
             </div>
           </section>
 
-          {/* Breakdown Grids */}
+          {/* Location & Device Breakdown */}
           <section className="analytics-details-grid">
-            {/* Geographic Distribution Card */}
             <div className="analytics-card">
               <div className="card-header">
                 <h3>
@@ -325,7 +319,6 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Device & OS Card */}
             <div className="analytics-card">
               <div className="card-header">
                 <h3>
@@ -380,7 +373,7 @@ export default function Analytics() {
             </div>
           </section>
 
-          {/* Live Scan Audit Table */}
+          {/* Audit Logs Table */}
           <section
             className="analytics-card full-width"
             style={{ marginTop: "1.5rem" }}
@@ -471,15 +464,23 @@ export default function Analytics() {
                         </td>
                       </tr>
                     ) : logs.length > 0 ? (
-                      logs.map((log, index) => (
+                      logs.map((log) => (
                         <tr
-                          key={log.id || index}
+                          key={log.id}
                           style={{ borderBottom: "1px solid #f1f5f9" }}
                         >
                           <td
-                            style={{ padding: "0.75rem", fontSize: "0.85rem" }}
+                            style={{
+                              padding: "0.75rem",
+                              fontSize: "0.85rem",
+                            }}
                           >
-                            {new Date(log.timestamp).toLocaleString()}
+                            {log.timestamp
+                              ? new Date(log.timestamp).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "N/A"}
                           </td>
                           <td
                             style={{
@@ -488,19 +489,23 @@ export default function Analytics() {
                               fontWeight: 600,
                             }}
                           >
-                            {log.qrName || log.campaign || "N/A"}
+                            {log.campaign}
                           </td>
                           <td
-                            style={{ padding: "0.75rem", fontSize: "0.85rem" }}
+                            style={{
+                              padding: "0.75rem",
+                              fontSize: "0.85rem",
+                            }}
                           >
-                            {log.city
-                              ? `${log.city}, ${log.country}`
-                              : log.country || "Unknown"}
+                            {log.location}
                           </td>
                           <td
-                            style={{ padding: "0.75rem", fontSize: "0.85rem" }}
+                            style={{
+                              padding: "0.75rem",
+                              fontSize: "0.85rem",
+                            }}
                           >
-                            {log.device || "Unknown"}
+                            {log.device}
                           </td>
                           <td
                             style={{
@@ -509,7 +514,7 @@ export default function Analytics() {
                               color: "#64748b",
                             }}
                           >
-                            {log.ipAddress || "—"}
+                            {log.ip}
                           </td>
                         </tr>
                       ))

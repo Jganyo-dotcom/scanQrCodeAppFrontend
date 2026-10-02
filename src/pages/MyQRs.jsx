@@ -26,8 +26,6 @@ import Sidebar from "../components/layout/Sidebar";
 import { baseUrl } from "../components/api";
 import "../css/MyQRs.css";
 
-const backendHost = baseUrl;
-
 export default function MyQRs() {
   const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -298,7 +296,9 @@ export default function MyQRs() {
               <div className="metric-info">
                 <span className="metric-label">Total Scans</span>
                 <span className="metric-value">
-                  {isLoading ? "..." : metrics.totalScans.toLocaleString()}
+                  {isLoading
+                    ? "..."
+                    : (metrics.totalScans || 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -374,13 +374,11 @@ export default function MyQRs() {
           ) : filteredQRs.length > 0 ? (
             <div className="qr-cards-grid">
               {filteredQRs.map((qr) => {
+                const qrTypeString = (qr.qrType || "url").toLowerCase();
+                const backendHost = baseUrl.replace("/api", "");
                 const shortlinkValue = qr.isDynamic
-                  ? `${backendHost}/r/${qr.shortId}`
-                  : qr.contentData;
-
-                const qrTypeString = qr.qrType || "url";
-                const totalScans =
-                  qr.scansCount ?? qr.scans ?? qr.scanCount ?? 0;
+                  ? `${backendHost}/v1/qrs/${qr.shortId}`
+                  : "none";
 
                 return (
                   <div key={qr._id} className="qr-item-card">
@@ -423,25 +421,44 @@ export default function MyQRs() {
 
                     <div className="qr-card-body">
                       <h3 className="qr-card-title">{qr.name}</h3>
-                      <p className="qr-card-target">{qr.contentData}</p>
+                      <p className="qr-card-target" title={qr.contentData}>
+                        {qr.contentData}
+                      </p>
                       <span className="qr-card-date">
                         Created: {new Date(qr.createdAt).toLocaleDateString()}
                       </span>
 
                       <div className="qr-card-meta">
                         <span className="scans-count">
-                          {totalScans.toLocaleString()} scans
+                          {(qr.scanCount || 0).toLocaleString()} scans
                         </span>
+
                         {qr.isDynamic ? (
-                          <a
-                            href={`${backendHost}/r/${qr.shortId}`}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            onClick={() =>
+                              window.open(
+                                shortlinkValue,
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            }
                             className="shortlink-anchor"
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#2563eb",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                              fontSize: "0.85rem",
+                              padding: 0,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                            }}
+                            title="Test dynamic tracking link redirection"
                           >
-                            {backendHost}/r/{qr.shortId}{" "}
-                            <ExternalLink size={12} />
-                          </a>
+                            /v1/qrs/{qr.shortId} <ExternalLink size={12} />
+                          </button>
                         ) : (
                           <span
                             style={{ fontSize: "0.75rem", color: "#94a3b8" }}
@@ -455,8 +472,17 @@ export default function MyQRs() {
                     <div className="qr-card-actions">
                       <button
                         className="action-btn"
+                        disabled={!qr.isDynamic}
                         onClick={() => handleOpenEditModal(qr)}
-                        title="Edit Target Destination URL"
+                        title={
+                          qr.isDynamic
+                            ? "Edit Target Destination URL"
+                            : "Static codes cannot be modified"
+                        }
+                        style={{
+                          opacity: qr.isDynamic ? 1 : 0.5,
+                          cursor: qr.isDynamic ? "pointer" : "not-allowed",
+                        }}
                       >
                         <Pencil size={14} />
                         <span>Edit</span>

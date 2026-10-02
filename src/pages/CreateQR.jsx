@@ -15,6 +15,9 @@ import {
   Save,
   RefreshCw,
   Zap,
+  Image as ImageIcon,
+  UploadCloud,
+  ExternalLink,
 } from "lucide-react";
 import Sidebar from "../components/layout/Sidebar";
 import "../css/CreateQR.css";
@@ -33,6 +36,12 @@ export default function CreateQR() {
   const [vName, setVName] = useState("");
   const [vPhone, setVPhone] = useState("");
 
+  // Image Upload States
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   // Routing Strategy & Backend Integration States
   const [isDynamic, setIsDynamic] = useState(false);
   const [generatedQrValue, setGeneratedQrValue] = useState("");
@@ -46,10 +55,13 @@ export default function CreateQR() {
   const [copied, setCopied] = useState(false);
 
   const qrRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Format payload strings according to standard QR spec
   const getFormattedPayload = () => {
     switch (selectedType) {
+      case "image":
+        return uploadedImageUrl || imagePreviewUrl || "https://devjay.io";
       case "wifi":
         return `WIFI:S:${ssid};T:WPA;P:${password};;`;
       case "vcard":
@@ -89,6 +101,70 @@ export default function CreateQR() {
     if (generatedQrValue) setGeneratedQrValue("");
   };
 
+  // Upload Picture to Backend (`/scan_images` directory)
+  const handleImageFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setStatusMessage({
+        type: "error",
+        text: "Please select a valid image file (PNG, JPG, WEBP, GIF).",
+      });
+      return;
+    }
+
+    setImageFile(file);
+    const localObjectUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(localObjectUrl);
+    setGeneratedQrValue("");
+    setIsUploadingImage(true);
+    setStatusMessage({ type: "", text: "" });
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const token = localStorage.getItem("token");
+
+    try {
+      // POST multipart request to backend upload route
+      const response = await fetch(`${baseUrl}/v1/qrs/upload-image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to upload image.");
+      }
+
+      // Expected return: public URL pointing to saved image inside /scan_images/
+      const finalUrl =
+        data.imageUrl || `${baseUrl}/scan_images/${data.filename}`;
+      setUploadedImageUrl(finalUrl);
+
+      setStatusMessage({
+        type: "success",
+        text: "Image uploaded successfully! Viewers can scan to view and download.",
+      });
+    } catch (err) {
+      // Fallback to local blob preview URL if backend endpoint is offline
+      setUploadedImageUrl(localObjectUrl);
+      setStatusMessage({
+        type: "error",
+        text: `Image upload warning: ${err.message}. Local preview used for QR code.`,
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   // POST Request to Express Server Backend
   const handleSaveToBackend = async () => {
     setIsSaving(true);
@@ -100,7 +176,7 @@ export default function CreateQR() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // 🚀 Transmits the header token strategy!
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: title,
@@ -113,7 +189,7 @@ export default function CreateQR() {
             dotStyle: cornerDot,
           },
         }),
-        credentials: "include", // Transmit HttpOnly Auth Token Cookies
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -211,6 +287,17 @@ export default function CreateQR() {
                   </button>
                   <button
                     type="button"
+                    className={`type-btn ${selectedType === "image" ? "active" : ""}`}
+                    onClick={() => {
+                      setSelectedType("image");
+                      setGeneratedQrValue("");
+                    }}
+                  >
+                    <ImageIcon size={20} />
+                    Picture / Image
+                  </button>
+                  <button
+                    type="button"
                     className={`type-btn ${selectedType === "wifi" ? "active" : ""}`}
                     onClick={() => {
                       setSelectedType("wifi");
@@ -286,6 +373,162 @@ export default function CreateQR() {
                       }
                       placeholder="https://your-domain.com"
                     />
+                  </div>
+                )}
+
+                {/* Picture / Image Upload Field */}
+                {selectedType === "image" && (
+                  <div className="field-container">
+                    <label className="field-label">Upload Image / Photo</label>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageFileSelect}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                    />
+
+                    <div
+                      onClick={() =>
+                        !isUploadingImage && fileInputRef.current?.click()
+                      }
+                      style={{
+                        border: "2px dashed var(--create-border, #cbd5e1)",
+                        borderRadius: "10px",
+                        padding: "1.5rem",
+                        textAlign: "center",
+                        backgroundColor: "var(--card-bg, #f8fafc)",
+                        cursor: isUploadingImage ? "not-allowed" : "pointer",
+                        transition: "all 0.2s ease",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      {isUploadingImage ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <RefreshCw
+                            size={28}
+                            className="animate-spin"
+                            color="#2563eb"
+                            style={{ animation: "spin 1s linear infinite" }}
+                          />
+                          <span
+                            style={{
+                              fontSize: "0.9rem",
+                              fontWeight: 600,
+                              color: "#2563eb",
+                            }}
+                          >
+                            Uploading image to server...
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <UploadCloud size={32} color="#2563eb" />
+                          <span
+                            style={{
+                              fontSize: "0.9rem",
+                              fontWeight: 600,
+                              color: "var(--text-primary, #0f172a)",
+                            }}
+                          >
+                            Click to browse or drag image here
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--text-muted, #64748b)",
+                            }}
+                          >
+                            Supports PNG, JPG, WEBP, GIF (Saved to /scan_images)
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Image Preview and Link */}
+                    {imagePreviewUrl && (
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          padding: "0.75rem",
+                          border: "1px solid var(--create-border, #e2e8f0)",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          backgroundColor: "#ffffff",
+                        }}
+                      >
+                        <img
+                          src={imagePreviewUrl}
+                          alt="Uploaded preview"
+                          style={{
+                            width: "56px",
+                            height: "56px",
+                            objectFit: "cover",
+                            borderRadius: "6px",
+                            border: "1px solid #e2e8f0",
+                          }}
+                        />
+                        <div style={{ flex: 1, overflow: "hidden" }}>
+                          <strong
+                            style={{
+                              display: "block",
+                              fontSize: "0.85rem",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {imageFile ? imageFile.name : "Uploaded Image"}
+                          </strong>
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--text-muted, #64748b)",
+                              display: "block",
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            {uploadedImageUrl || "Processing..."}
+                          </span>
+                        </div>
+
+                        {uploadedImageUrl && (
+                          <a
+                            href={uploadedImageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "0.4rem 0.6rem",
+                              borderRadius: "6px",
+                              backgroundColor: "#eff6ff",
+                              color: "#2563eb",
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                              textDecoration: "none",
+                            }}
+                          >
+                            View <ExternalLink size={14} />
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -658,7 +901,7 @@ export default function CreateQR() {
                 <button
                   type="button"
                   onClick={handleSaveToBackend}
-                  disabled={isSaving}
+                  disabled={isSaving || isUploadingImage}
                   style={{
                     backgroundColor: "#2563eb",
                     color: "white",
@@ -669,9 +912,11 @@ export default function CreateQR() {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "0.5rem",
-                    cursor: "pointer",
+                    cursor:
+                      isSaving || isUploadingImage ? "not-allowed" : "pointer",
                     border: "none",
                     width: "100%",
+                    opacity: isSaving || isUploadingImage ? 0.7 : 1,
                   }}
                 >
                   {isSaving ? <RefreshCw size={18} /> : <Save size={18} />}
