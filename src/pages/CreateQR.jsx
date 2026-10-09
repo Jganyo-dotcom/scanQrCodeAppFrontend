@@ -35,6 +35,7 @@ export default function CreateQR() {
   const [password, setPassword] = useState("");
   const [vName, setVName] = useState("");
   const [vPhone, setVPhone] = useState("");
+  const [vEmail, setVEmail] = useState("");
 
   // Image Upload States
   const [imageFile, setImageFile] = useState(null);
@@ -65,7 +66,7 @@ export default function CreateQR() {
       case "wifi":
         return `WIFI:S:${ssid};T:WPA;P:${password};;`;
       case "vcard":
-        return `BEGIN:VCARD\nVERSION:3.0\nN:${vName}\nTEL:${vPhone}\nEND:VCARD`;
+        return `BEGIN:VCARD\nVERSION:3.0\nN:${vName}\nTEL:${vPhone}\nEmail:${vEmail}END:VCARD`;
       case "text":
         return textPayload;
       case "url":
@@ -585,6 +586,18 @@ export default function CreateQR() {
                           handleInputChange(setVPhone, e.target.value)
                         }
                         placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                    <div className="field-container">
+                      <label className="field-label">Email</label>
+                      <input
+                        type="email"
+                        className="field-input"
+                        value={vEmail}
+                        onChange={(e) =>
+                          handleInputChange(setVEmail, e.target.value)
+                        }
+                        placeholder="support@elitech.com"
                       />
                     </div>
                   </div>

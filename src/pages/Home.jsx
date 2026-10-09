@@ -42,7 +42,7 @@ export default function HomePage() {
             </li>
           </ul>
 
-          <Link to="/login" className="btn btn-primary">
+          <Link to="/create" className="btn btn-primary">
             Dashboard <ArrowRight size={16} />
           </Link>
         </div>
@@ -66,7 +66,7 @@ export default function HomePage() {
           </p>
           <div className="hero-actions">
             <Link
-              to="/dashboard"
+              to="/create"
               className="btn btn-primary"
               style={{ padding: "0.95rem 1.8rem" }}
             >
